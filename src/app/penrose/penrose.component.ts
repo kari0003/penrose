@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import * as THREE from 'three';
+import { Mesh } from 'three';
 
 const GOLDEN_RATIO = (Math.sqrt(5) + 1) / 2;
 
@@ -43,14 +44,37 @@ export class PenroseComponent implements AfterViewInit {
     const meshMatA = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
     const meshMatB = new THREE.MeshBasicMaterial({ color: 0xff3300 });
 
-    const meshA = new THREE.Mesh(A, meshMatA);
-    const meshB = new THREE.Mesh(B, meshMatB);
-    meshA.translateX(-150);
-    meshA.scale.set(100, 100, 1);
-    meshB.translateX(50);
-    meshB.scale.set(100, 100, 1);
+    const drawTriangle = (
+      baseTriangle: THREE.BufferGeometry,
+      offset: { x: number; y: number; r: number },
+      mat: THREE.MeshBasicMaterial,
+    ): THREE.Mesh => {
+      const mesh = new Mesh(baseTriangle, mat);
+      mesh.translateX(offset.x);
+      mesh.translateY(offset.y);
+      mesh.rotateZ(offset.r);
+      mesh.scale.set(100, 100, 1);
+      return mesh;
+    };
 
-    this.scene.add(meshA, meshB);
+    const drawA = (x = 0, y = 0, r = 0): THREE.Mesh => drawTriangle(A, { x, y, r }, meshMatA);
+    const drawB = (x = 0, y = 0, r = 0): THREE.Mesh => drawTriangle(B, { x, y, r }, meshMatB);
+
+    const triangles: [type: 'a' | 'b', params: [x: number, y: number, rotation: number]][] = [
+      ['a', [-150, 0, 0.1]],
+      ['b', [50, 0, 0]],
+    ];
+
+    this.scene.add(
+      ...triangles.map((params) => {
+        switch (params[0]) {
+          case 'a':
+            return drawA(...params[1]);
+          default:
+            return drawB(...params[1]);
+        }
+      }),
+    );
     this.scene.background = new THREE.Color(0x449944);
     this.renderer.render(this.scene, this.camera);
     console.log('all done');
